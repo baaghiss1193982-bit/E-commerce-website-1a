@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FlipCartish — Demo E-commerce (Single File)</title>
+  <style>
+    /* ===== RESET & THEME ===== */
+    :root{
+      --accent:#ff6f00;
+      --accent-2:#0d6efd;
+      --muted:#6c757d;
+      --bg:#f4f6fb;
+      --card:#fff;
+      --radius:12px;
+      --max-width:1200px;
+      --shadow: 0 8px 28px rgba(15,23,42,0.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      background:linear-gradient(180deg,var(--bg),#eef2ff 60%);
+      color:#0f1724;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:18px;
+    }
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .container{max-width:var(--max-width);margin:0 auto}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+
+    /* ===== HEADER ===== */
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:12px;cursor:pointer}
+    .brand .logo{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#ff8a4d);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    .brand .title{font-weight:800}
+    nav.top-nav{display:flex;align-items:center;gap:10px}
+    .search{flex:1;display:flex;gap:8px}
+    .search input{flex:1;padding:10px;border-radius:10px;border:1px solid #e6e9ef}
+    .btn{background:var(--accent-2);color:white;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
+    .ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px 10px;border-radius:10px;cursor:pointer}
+    .small{font-size:13px;color:var(--muted)}
+
+    /* ===== LAYOUT ===== */
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
+    @media(max-width:980px){.grid{grid-template-columns:1fr}.mini-cart{position:static}}
+
+    /* ===== SIDEBAR / FILTERS ===== */
+    .filters{display:flex;flex-direction:column;gap:10px;padding:12px}
+    .filter-row{display:flex;gap:8px;align-items:center}
+    label{display:block;font-size:13px;color:var(--muted)}
+    select,input[type="range"],input[type="number"],textarea{padding:8px;border-radius:8px;border:1px solid #e6e9ef}
+
+    /* ===== PRODUCTS ===== */
+    .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .product{padding:10px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfbff);display:flex;flex-direction:column;gap:8px;min-height:260px}
+    .product .img{height:150px;border-radius:8px;background:#f2f4ff;display:flex;align-items:center;justify-content:center}
+    .product h4{margin:6px 0 0 0;font-size:16px}
+    .price{font-weight:700;color:var(--accent-2)}
+
+    /* ===== MINI CART ===== */
+    .mini-cart{position:sticky;top:20px}
+    .cart-list{max-height:360px;overflow:auto;margin-top:8px}
+    .cart-item{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.04)}
+
+    /* ===== PRODUCT PAGE ===== */
+    .product-page{display:grid;grid-template-columns:1fr 320px;gap:18px}
+    @media(max-width:900px){.product-page{grid-template-columns:1fr}}
+    .gallery{border-radius:10px;overflow:hidden}
+
+    /* ===== FORMS & CHECKOUT ===== */
+    .checkout-grid{display:grid;grid-template-columns:1fr 330px;gap:18px}
+    .order-card{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px;border-radius:8px;background:#fafbff}
+
+    /* ===== ADMIN ===== */
+    .admin-panel{display:flex;flex-direction:column;gap:12px}
+
+    /* ===== FOOTER ===== */
+    footer{margin-top:18px;color:var(--muted);text-align:center}
+
+    /* extra */
+    .badge{background:#eef8ff;padding:4px 8px;border-radius:8px;font-weight:700;color:var(--accent-2)}
+    .muted{color:var(--muted)}
+    .center{text-align:center}
+    .row{display:flex;gap:10px;align-items:center}
+    .pill{padding:6px 10px;border-radius:999px;background:#f3f4f6}
+    .star{color:#ffb020}
+    textarea{min-height:70px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand" onclick="navigate('#home')">
+        <div class="logo">F</div>
+        <div>
+          <div class="title">FlipCartish</div>
+          <div class="small">Demo e-commerce — client-side</div>
+        </div>
+      </div>
+
+      <div style="flex:1" class="search">
+        <input id="search-input" placeholder="Search for products, brands and more..." />
+        <select id="cat-filter" style="max-width:160px">
+          <option value="">All categories</option>
+        </select>
+        <button class="btn" id="search-btn">Search</button>
+      </div>
+
+      <nav class="top-nav">
+        <div class="small" id="welcome-user">Guest</div>
+        <button class="ghost" onclick="navigate('#wishlist')">Wishlist (<span id="wish-count">0</span>)</button>
+        <button class="ghost" id="open-cart">Cart (<span id="cart-count">0</span>)</button>
+        <button class="btn" onclick="navigate('#shop')">Shop</button>
+      </nav>
+    </header>
+
+    <main id="app">
+      <!-- SPA content injected -->
+    </main>
+
+    <footer>
+      Built for portfolio demo — client-only. For production you need a backend, secure auth, payments.
+    </footer>
+  </div>
+
+  <!-- TEMPLATES -->
+  <template id="home-tpl">
+    <section class="card">
+      <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+        <div style="flex:1">
+          <h1>Shop the best deals — FlipCartish Demo</h1>
+          <p class="muted">Fully client-side demo with product catalog, cart, checkout, admin, reviews & order tracking.</p>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn" onclick="navigate('#shop')">Start shopping</button>
+            <button class="ghost" onclick="navigate('#about')">About this demo</button>
+          </div>
+        </div>
+        <div style="width:320px">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='160'><rect width='320' height='160' fill='%23fff7ed'/><text x='18' y='90' font-family='Arial' font-size='20' fill='%23ff6f00'>FlipCartish — demo</text></svg>" alt="hero" />
+        </div>
+      </div>
+
+      <div style="margin-top:18px">
+        <h3>Featured</h3>
+        <div id="home-featured" class="products"></div>
+      </div>
+    </section>
+  </template>
+
+  <template id="shop-tpl">
+    <section class="grid">
+      <div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h3>All Products</h3>
+              <div class="small">Showing <span id="results-count">0</span> products</div>
+            </div>
+            <div class="row" style="gap:12px">
+              <select id="sort-by">
+                <option value="popular">Sort: Popular</option>
+                <option value="price-asc">Price: Low → High</option>
+                <option value="price-desc">Price: High → Low</option>
+                <option value="new">Newest</option>
+                <option value="rating">Top rated</option>
+              </select>
+              <select id="per-page">
+                <option value="8">8 / page</option>
+                <option value="12">12 / page</option>
+                <option value="20">20 / page</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:12px">
+            <aside style="width:220px" class="card filters">
+              <div><strong>Filters</strong></div>
+              <div>
+                <label>Category</label>
+                <select id="side-cat">
+                  <option value="">All</option>
+                </select>
+              </div>
+              <div>
+                <label>Price (max)</label>
+                <input type="number" id="max-price" placeholder="e.g. 3000" />
+              </div>
+              <div>
+                <label>Min Rating</label>
+                <select id="min-rating">
+                  <option value="0">Any</option>
+                  <option value="3">3+</option>
+                  <option value="4">4+</option>
+                </select>
+              </div>
+              <div style="margin-top:8px">
+                <button class="btn" id="apply-filters">Apply</button>
+                <button class="ghost" id="clear-filters">Clear</button>
+              </div>
+              <hr />
+              <div>
+                <strong>Utilities</strong>
+                <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px">
+                  <button class="ghost" onclick="exportData()">Export Data</button>
+                  <button class="ghost" onclick="importDataPrompt()">Import Data</button>
+                  <button class="ghost" onclick="resetDemo()">Reset Demo</button>
+                </div>
+              </div>
+            </aside>
+
+            <div style="flex:1">
+              <div id="products-area" style="min-height:200px">
+                <div id="product-grid" class="products"></div>
+              </div>
+
+              <div style="margin-top:12px;display:flex;justify-content:center" id="pagination"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="mini-cart card">
+        <h4>Your Cart</h4>
+        <div id="mini-cart-list" class="cart-list"></div>
+        <div style="margin-top:12px">
+          <div class="small">Subtotal: <strong id="subtotal-amt">₹0</strong></div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn" onclick="navigate('#checkout')">Checkout</button>
+            <button class="ghost" onclick="clearCart()">Clear</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </template>
+
+  <template id="product-tpl">
+    <section class="product-page card">
+      <div>
+        <div class="gallery card" id="prod-gallery"></div>
+        <h2 id="prod-title"></h2>
+        <div class="small" id="prod-sku"></div>
+        <p id="prod-desc" class="muted"></p>
+        <div style="display:flex;gap:12px;align-items:center;margin-top:10px">
+          <div class="price" id="prod-price"></div>
+          <div class="pill small" id="prod-stock"></div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+          <div class="row">
+            Qty: <input id="prod-qty" type="number" min="1" value="1" style="width:80px;margin-left:8px" />
+          </div>
+          <button class="btn" id="add-to-cart-btn">Add to cart</button>
+          <button class="ghost" id="toggle-wish-btn">Add to wishlist</button>
+        </div>
+
+        <div style="margin-top:18px">
+          <h4>Customer reviews</h4>
+          <div id="reviews-area"></div>
+
+          <div style="margin-top:12px" id="leave-review-area">
+            <div class="small">Leave a review (you must be logged in)</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <select id="review-rating"><option value="5">5 ★</option><option value="4">4 ★</option><option value="3">3 ★</option><option value="2">2 ★</option><option value="1">1 ★</option></select>
+              <input id="review-title" placeholder="Title" style="flex:1" />
+            </div>
+            <textarea id="review-body" placeholder="Tell others about the product"></textarea>
+            <div style="display:flex;gap:8px">
+              <button class="btn" id="submit-review-btn">Submit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card">
+        <h4>Quick Info</h4>
+        <div class="small">Category: <span id="prod-cat"></span></div>
+        <div class="small">Brand: <span id="prod-brand"></span></div>
+        <div class="small" style="margin-top:8px">SKU: <span id="prod-sku-2"></span></div>
+        <div style="margin-top:12px">
+          <strong>Specs</strong>
+          <div id="prod-specs" class="muted small"></div>
+        </div>
+      </aside>
+    </section>
+  </template>
+
+  <template id="checkout-tpl">
+    <section class="card">
+      <h3>Checkout</h3>
+      <div class="checkout-grid">
+        <div>
+          <div>
+            <label>Choose address</label>
+            <select id="address-select"></select>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button class="ghost" onclick="navigate('#profile')">Manage addresses</button>
+              <button class="ghost" id="add-address-btn">Add address</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>Payment method</label>
+            <select id="payment-method">
+              <option>Cash on Delivery</option>
+              <option>UPI (Simulated)</option>
+              <option>Card (Simulated)</option>
+            </select>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>Coupon code</label>
+            <input id="coupon" placeholder="DEMO10" />
+            <div style="margin-top:8px">
+              <button class="btn" id="apply-coupon">Apply coupon</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <button class="btn" id="place-order-btn">Place Order</button>
+          </div>
+        </div>
+
+        <aside class="card">
+          <h4>Order Summary</h4>
+          <div id="checkout-items"></div>
+          <div style="margin-top:12px">Subtotal: <strong id="checkout-sub">₹0</strong></div>
+          <div>Discount: <strong id="checkout-disc">₹0</strong></div>
+          <div style="margin-top:8px">Total: <strong id="checkout-total">₹0</strong></div>
+        </aside>
+      </div>
+    </section>
+  </template>
+
+  <template id="orders-tpl">
+    <section class="card">
+      <h3>Your Orders & Tracking</h3>
+      <div id="orders-list"></div>
+    </section>
+  </template>
+
+  <template id="order-detail-tpl">
+    <section class="card">
+      <h3>Order <span id="od-id"></span></h3>
+      <div class="small">Placed: <span id="od-date"></span></div>
+      <div style="margin-top:10px"><strong>Items:</strong><div id="od-items" style="margin-top:6px"></div></div>
+      <div style="margin-top:10px"><strong>Shipping:</strong><div id="od-shipping" class="small"></div></div>
+      <div style="margin-top:10px"><strong>Tracking</strong>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
+          <div class="badge" id="od-tracking"></div>
+          <div class="small">Status: <span id="od-status"></span></div>
+        </div>
+        <div style="margin-top:8px" id="od-history"></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="ghost" onclick="navigate('#orders')">Back to orders</button>
+        <button class="btn" id="simulate-progress">Simulate Progress</button>
+      </div>
+    </section>
+  </template>
+
+  <template id="profile-tpl">
+    <section class="card">
+      <h3>Profile & Addresses</h3>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1">
+          <label>Name<input id="profile-name" /></label>
+          <label>Email<input id="profile-email" /></label>
+          <div style="margin-top:8px">
+            <button class="btn" id="save-profile-btn">Save Profile</button>
+          </div>
+
+          <div style="margin-top:18px">
+            <h4>Addresses</h4>
+            <div id="addresses-list"></div>
+            <div style="margin-top:8px">
+              <button class="ghost" id="add-new-address">Add New Address</button>
+            </div>
+          </div>
+        </div>
+
+        <aside style="width:320px">
+          <h4>Order History</h4>
+          <div id="profile-orders"></div>
+        </aside>
+      </div>
+    </section>
+  </template>
+
+  <template id="wishlist-tpl">
+    <section class="card">
+      <h3>Your Wishlist</h3>
+      <div id="wishlist-grid" class="products"></div>
+    </section>
+  </template>
+
+  <template id="about-tpl">
+    <section class="card">
+      <h3>About This Demo</h3>
+      <p>This single-file demo reproduces many ecommerce flows in the browser using localStorage only.</p>
+      <p><strong>To use in production:</strong> add server-side API, authentication, database, payment gateway, and secure admin flow.</p>
+    </section>
+  </template>
+
+  <template id="admin-tpl">
+    <section class="card admin-panel">
+      <h3>Admin Panel</h3>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="btn" id="admin-add-product">Add Product</button>
+        <button class="ghost" id="admin-reset-orders">Reset Orders</button>
+        <div style="margin-left:auto">
+          <button class="ghost" onclick="navigate('#shop')">Back to shop</button>
+        </div>
+      </div>
+
+      <div id="admin-products" style="margin-top:12px"></div>
+
+      <h4 style="margin-top:12px">Orders</h4>
+      <div id="admin-orders"></div>
+    </section>
+  </template>
+
+  <template id="login-tpl">
+    <section class="card">
+      <h3>Login / Register</h3>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1">
+          <h4>Login</h4>
+          <label>Email<input id="login-email" /></label>
+          <label>Password<input id="login-pass" type="password" /></label>
+          <div style="margin-top:8px"><button class="btn" id="login-btn">Login</button></div>
+        </div>
+
+        <div style="flex:1">
+          <h4>Register</h4>
+          <label>Name<input id="reg-name" /></label>
+          <label>Email<input id="reg-email" /></label>
+          <label>Password<input id="reg-pass" type="password" /></label>
+          <div style="margin-top:8px"><button class="btn" id="reg-btn">Register</button></div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <!-- MAIN SCRIPT -->
+  <script>
+  /************************************************************************
+   * FlipCartish — Single-file demo e-commerce (client-side)
+   * - Save as flipkartish-demo.html and open in browser
+   * - IMPORTANT: This is a demo. For production add secure server & payments.
+   ************************************************************************/
+
+  /* ---------------------------
+     Storage keys & seed data
+  ----------------------------*/
+  const STORAGE = {
+    PRODUCTS: 'fc_products_v1',
+    CART: 'fc_cart_v1',
+    WISHLIST: 'fc_wishlist_v1',
+    USERS: 'fc_users_v1',
+    AUTH: 'fc_auth_v1',
+    ORDERS: 'fc_orders_v1',
+    SETTINGS: 'fc_settings_v1'
+  };
+
+  // Sample product seed
+  const SEED_PRODUCTS = [
+    {id:1,title:'Classic Leather Wallet',price:799,desc:'Full grain leather wallet, 6 card slots.',cat:'Accessories',brand:'Loft',sku:'WL-1001',img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop',stock:12,rating:4.3,ratingsCount:23,specs:'Material: Leather; Color: Brown; Size: 10x8 cm',createdAt:Date.now()-1000*60*60*24*40,featured:true},
+    {id:2,title:'Retro Sunglasses',price:1299,desc:'UV protection, vintage frame.',cat:'Accessories',brand:'RetroLux',sku:'SG-202',img:'https://images.unsplash.com/photo-1520975698516-6c2f4b16b0d4?q=80&w=800&auto=format&fit=crop',stock:25,rating:4.6,ratingsCount:80,specs:'UV400 lens; Metal frame',createdAt:Date.now()-1000*60*60*24*30},
+    {id:3,title:'Modern Backpack',price:2399,desc:'Water-resistant daily backpack, laptop sleeve.',cat:'Bags',brand:'PackIt',sku:'BP-330',img:'https://images.unsplash.com/photo-1519741498381-c7f38b4e64d6?q=80&w=800&auto=format&fit=crop',stock:18,rating:4.1,ratingsCount:54,specs:'Laptop sleeve 15.6", Water-resistant',createdAt:Date.now()-1000*60*60*24*20},
+    {id:4,title:'Wireless Earbuds',price:2499,desc:'Noise reduction, 20h battery life.',cat:'Electronics',brand:'Soundo',sku:'EB-77',img:'https://images.unsplash.com/photo-1580894894514-1c3a3f5f6b61?q=80&w=800&auto=format&fit=crop',stock:40,rating:4.4,ratingsCount:120,specs:'BT5.0; 20h battery',createdAt:Date.now()-1000*60*60*24*10},
+    {id:5,title:'Elegant Watch',price:4999,desc:'Minimalist design, stainless steel.',cat:'Watches',brand:'Timely',sku:'WT-500',img:'https://images.unsplash.com/photo-1519744792095-2f2205e87b6f?q=80&w=800&auto=format&fit=crop',stock:6,rating:4.7,ratingsCount:210,specs:'Stainless steel; 40mm',createdAt:Date.now()-1000*60*60*24*5,featured:true},
+    {id:6,title:'Running Shoes',price:3299,desc:'Lightweight, breathable sole.',cat:'Footwear',brand:'Stride',sku:'SH-88',img:'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=800&auto=format&fit=crop',stock:30,rating:4.2,ratingsCount:180,specs:'Breathable mesh; Rubber sole',createdAt:Date.now()-1000*60*60*24*2},
+    {id:7,title:'Bluetooth Speaker',price:1999,desc:'Portable speaker with deep bass.',cat:'Electronics',brand:'BeatBox',sku:'SP-11',img:'https://images.unsplash.com/photo-1585386959984-a415522e3b1c?q=80&w=800&auto=format&fit=crop',stock:15,rating:4.0,ratingsCount:66,specs:'10W; IPX4',createdAt:Date.now()-1000*60*60*24*12},
+    {id:8,title:'Formal Shirt',price:1199,desc:'Slim-fit cotton shirt for office wear.',cat:'Apparel',brand:'UrbanAttire',sku:'FS-12',img:'https://images.unsplash.com/photo-1520975928471-8dfe664c9f11?q=80&w=800&auto=format&fit=crop',stock:20,rating:3.9,ratingsCount:32,specs:'100% cotton; Slim fit',createdAt:Date.now()-1000*60*60*24*25}
+  ];
+
+  // Seed admin user for demo
+  const SEED_USERS = [
+    {id:1,name:'Admin',email:'admin@demo.com',pass:'admin123',isAdmin:true,addresses:[],createdAt:Date.now()}
+  ];
+
+  /* ---------------------------
+     Storage helpers
+  ----------------------------*/
+  function read(key, fallback){
+    try{
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    }catch(e){ return fallback; }
+  }
+  function write(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+  /* ---------------------------
+     Initialize app data
+  ----------------------------*/
+  function initData(){
+    if(!read(STORAGE.PRODUCTS)) write(STORAGE.PRODUCTS, SEED_PRODUCTS);
+    if(!read(STORAGE.USERS)) write(STORAGE.USERS, SEED_USERS);
+    if(!read(STORAGE.CART)) write(STORAGE.CART, []);
+    if(!read(STORAGE.WISHLIST)) write(STORAGE.WISHLIST, []);
+    if(!read(STORAGE.ORDERS)) write(STORAGE.ORDERS, []);
+    if(!read(STORAGE.SETTINGS)) write(STORAGE.SETTINGS, {nextProductId: SEED_PRODUCTS.length+1});
+  }
+
+  initData();
+
+  /* ---------------------------
+     Routing & Render
+  ----------------------------*/
+  window.addEventListener('hashchange', render);
+  window.addEventListener('load', ()=>{ initUI(); render(); });
+
+  function navigate(hash){
+    location.hash = hash;
+  }
+
+  function initUI(){
+    document.getElementById('open-cart').addEventListener('click', ()=>navigate('#checkout'));
+    document.getElementById('search-btn').addEventListener('click', ()=>{const q=document.getElementById('search-input').value.trim(); navigate('#shop?search='+encodeURIComponent(q));});
+    populateCategoryFilters();
+    updateHeaderUser();
+    updateCounts();
+  }
+
+  function updateHeaderUser(){
+    const auth = read(STORAGE.AUTH, null);
+    const welcome = document.getElementById('welcome-user');
+    welcome.textContent = auth ? auth.name : 'Guest';
+  }
+
+  function updateCounts(){
+    const cart = read(STORAGE.CART, []);
+    const wish = read(STORAGE.WISHLIST, []);
+    document.getElementById('cart-count').textContent = cart.reduce((s,i)=>s+i.qty,0);
+    document.getElementById('wish-count').textContent = wish.length;
+    document.getElementById('cart-count').textContent = cart.reduce((s,i)=>s+i.qty,0);
+    const el = document.getElementById('subtotal-amt');
+    if(el) el.textContent = '₹' + cart.reduce((s,i)=>s+i.qty*i.price,0);
+  }
+
+  function render(){
+    const hash = location.hash || '#home';
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+    // set nav active is not required visually here
+    if(hash.startsWith('#shop')) renderShop();
+    else if(hash.startsWith('#product')) renderProduct();
+    else if(hash.startsWith('#checkout')) renderCheckout();
+    else if(hash.startsWith('#orders')) renderOrders();
+    else if(hash.startsWith('#profile')) renderProfile();
+    else if(hash.startsWith('#wishlist')) renderWishlist();
+    else if(hash.startsWith('#admin')) renderAdmin();
+    else if(hash.startsWith('#login')) renderLogin();
+    else if(hash.startsWith('#about')) renderTemplate('about-tpl');
+    else renderTemplate('home-tpl');
+  }
+
+  function renderTemplate(id){
+    const tpl = document.getElementById(id);
+    document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+    if(id==='home-tpl') renderHomeFeatured();
+  }
+
+  /* ---------------------------
+     Products listing & search
+  ----------------------------*/
+  function getProducts(){ return read(STORAGE.PRODUCTS, []); }
+
+  function populateCategoryFilters(){
+    const products = getProducts();
+    const cats = Array.from(new Set(products.map(p=>p.cat))).sort();
+    const catFilter = document.getElementById('cat-filter');
+    const sideCat = document.getElementById('side-cat');
+    if(catFilter) { catFilter.innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join(''); }
+    if(sideCat) { sideCat.innerHTML = '<option value="">All</option>' + cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join(''); }
+  }
+
+  // Parse query params from hash like #shop?search=...
+  function parseHashQuery(){
+    const raw = location.hash.split('?')[1] || '';
+    return new URLSearchParams(raw);
+  }
+
+  function renderHomeFeatured(){
+    const products = getProducts().filter(p=>p.featured).slice(0,4);
+    const container = document.getElementById('home-featured');
+    container.innerHTML = '';
+    products.forEach(p=>container.appendChild(productCard(p)));
+  }
+
+  function renderShop(){
+    renderTemplate('shop-tpl');
+    populateCategoryFilters();
+
+    const params = parseHashQuery();
+    const search = params.get('search') || '';
+    const productsAll = getProducts();
+
+    // Hook up filters
+    document.getElementById('apply-filters').addEventListener('click', ()=>applyFilterAndRender());
+    document.getElementById('clear-filters').addEventListener('click', ()=>{document.getElementById('max-price').value=''; document.getElementById('min-rating').value='0'; document.getElementById('side-cat').value=''; applyFilterAndRender();});
+    document.getElementById('sort-by').addEventListener('change', applyFilterAndRender);
+    document.getElementById('per-page').addEventListener('change', applyFilterAndRender);
+
+    // initial populate
+    if(search){ document.getElementById('search-input').value = search; }
+    applyFilterAndRender();
+
+    function applyFilterAndRender(page=1){
+      const cat = document.getElementById('side-cat').value;
+      const maxPrice = Number(document.getElementById('max-price').value || 0);
+      const minRating = Number(document.getElementById('min-rating').value || 0);
+      const sortBy = document.getElementById('sort-by').value;
+      const perPage = Number(document.getElementById('per-page').value || 8);
+
+      let items = productsAll.slice();
+
+      if(search) items = items.filter(p => p.title.toLowerCase().includes(search.toLowerCase()) || p.desc.toLowerCase().includes(search.toLowerCase()));
+      if(cat) items = items.filter(p => p.cat===cat);
+      if(maxPrice>0) items = items.filter(p => p.price <= maxPrice);
+      if(minRating>0) items = items.filter(p => p.rating >= minRating);
+
+      // sort
+      if(sortBy==='price-asc') items.sort((a,b)=>a.price-b.price);
+      else if(sortBy==='price-desc') items.sort((a,b)=>b.price-a.price);
+      else if(sortBy==='new') items.sort((a,b)=>b.createdAt - a.createdAt);
+      else if(sortBy==='rating') items.sort((a,b)=>b.rating - a.rating);
+
+      // pagination
+      const total = items.length;
+      const pages = Math.max(1, Math.ceil(total / perPage));
+      const current = Math.min(page, pages);
+      const start = (current-1)*perPage;
+      const paged = items.slice(start, start+perPage);
+
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = '';
+      paged.forEach(p => grid.appendChild(productCard(p)));
+
+      document.getElementById('results-count').textContent = total;
+
+      // pagination controls
+      renderPagination(pages, current, (p)=>applyFilterAndRender(p));
+      updateCounts();
+    }
+  }
+
+  function productCard(p){
+    const el = document.createElement('div');
+    el.className = 'product card';
+    el.innerHTML = `
+      <div class="img"><img src="${p.img}" alt="${escapeHtml(p.title)}"></div>
+      <h4>${escapeHtml(p.title)}</h4>
+      <div class="small muted">${escapeHtml(p.brand || '')} • ${escapeHtml(p.cat)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="price">₹${p.price}</div>
+        <div style="text-align:right">
+          <div class="small star">${p.rating ? p.rating.toFixed(1) : '—'} ★</div>
+          <div class="small">${p.ratingsCount || 0} reviews</div>
+        </div>
+      </div>
+      <div style="margin-top:auto;display:flex;gap:8px">
+        <button class="ghost" onclick="navigate('#product?id=${p.id}')">Details</button>
+        <button class="btn" onclick="addToCart(${p.id},1)">Add</button>
+      </div>
+    `;
+    return el;
+  }
+
+  function renderPagination(totalPages, current, onPage){
+    const wrap = document.getElementById('pagination');
+    wrap.innerHTML = '';
+    if(totalPages<=1) return;
+    for(let i=1;i<=totalPages;i++){
+      const b = document.createElement('button');
+      b.className = i===current ? 'btn' : 'ghost';
+      b.textContent = i;
+      b.addEventListener('click', ()=>onPage(i));
+      wrap.appendChild(b);
+    }
+  }
+
+  /* ---------------------------
+     Product page
+  ----------------------------*/
+  function renderProduct(){
+    const tpl = document.getElementById('product-tpl');
+    document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+    const params = parseHashQuery();
+    const id = Number(params.get('id'));
+    const p = getProducts().find(x=>x.id===id);
+    if(!p){ alert('Product not found'); navigate('#shop'); return; }
+
+    document.getElementById('prod-gallery').innerHTML = `<img src="${p.img}" alt="${escapeHtml(p.title)}" />`;
+    document.getElementById('prod-title').textContent = p.title;
+    document.getElementById('prod-sku').textContent = 'SKU: ' + p.sku;
+    document.getElementById('prod-sku-2').textContent = p.sku;
+    document.getElementById('prod-desc').textContent = p.desc;
+    document.getElementById('prod-price').textContent = '₹' + p.price;
+    document.getElementById('prod-stock').textContent = p.stock>0 ? 'In stock' : 'Out of stock';
+    document.getElementById('prod-cat').textContent = p.cat;
+    document.getElementById('prod-brand').textContent = p.brand || '—';
+    document.getElementById('prod-specs').textContent = p.specs || '';
+
+    document.getElementById('add-to-cart-btn').addEventListener('click', ()=>{ const q = Number(document.getElementById('prod-qty').value || 1); addToCart(p.id,q); });
+    document.getElementById('toggle-wish-btn').addEventListener('click', ()=>toggleWishlist(p.id));
+
+    renderReviews(p.id);
+    updateCounts();
+  }
+
+  /* ---------------------------
+     Reviews
+  ----------------------------*/
+  function renderReviews(productId){
+    const products = getProducts();
+    const p = products.find(x=>x.id===productId);
+    const reviewsArea = document.getElementById('reviews-area');
+    reviewsArea.innerHTML = '';
+    const reviews = p.reviews || [];
+    if(!reviews.length) reviewsArea.innerHTML = '<div class="small muted">No reviews yet.</div>';
+    else reviews.forEach(r=>{
+      const d = document.createElement('div');
+      d.style.borderBottom = '1px solid #eee';
+      d.style.padding = '6px 0';
+      d.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(r.title)}</strong><div class="small muted">${escapeHtml(r.userName)} • ${new Date(r.at).toLocaleDateString()}</div></div><div class="star">${'★'.repeat(r.rating)}</div></div><div style="margin-top:6px">${escapeHtml(r.body)}</div>`;
+      reviewsArea.appendChild(d);
+    });
+
+    const submitBtn = document.getElementById('submit-review-btn');
+    if(submitBtn){
+      submitBtn.addEventListener('click', ()=>{
+        const auth = read(STORAGE.AUTH, null);
+        if(!auth){ alert('Login to leave a review'); navigate('#login'); return; }
+        const rating = Number(document.getElementById('review-rating').value);
+        const title = document.getElementById('review-title').value.trim();
+        const body = document.getElementById('review-body').value.trim();
+        if(!title || !body){ alert('Please fill title and review'); return; }
+        // save review
+        const products = getProducts();
+        const p = products.find(x=>x.id===productId);
+        p.reviews = p.reviews || [];
+        p.reviews.push({rating,title,body,userId:auth.id,userName:auth.name,at:Date.now()});
+        // update rating aggregate
+        p.ratingsCount = p.reviews.length;
+        p.rating = (p.reviews.reduce((s,r)=>s+r.rating,0)/p.reviews.length);
+        write(STORAGE.PRODUCTS, products);
+        alert('Review submitted');
+        renderReviews(productId);
+      });
+    }
+  }
+
+  /* ---------------------------
+     Cart & wishlist
+  ----------------------------*/
+  function getCart(){ return read(STORAGE.CART, []); }
+  function saveCart(c){ write(STORAGE.CART, c); updateCounts(); renderMiniCart(); }
+
+  function addToCart(id, qty=1){
+    const products = getProducts();
+    const p = products.find(x=>x.id===id);
+    if(!p){ alert('Product not found'); return; }
+    const cart = getCart();
+    const it = cart.find(x=>x.id===id);
+    if(it) it.qty = Math.min((it.qty||0)+qty, p.stock || 9999);
+    else cart.push({id, title:p.title, price:p.price, qty:Math.min(qty, p.stock||9999,1)});
+    saveCart(cart);
+    alert('Added to cart: '+p.title);
+  }
+
+  function changeQty(id, qty){
+    const cart = getCart();
+    const item = cart.find(x=>x.id===id);
+    if(!item) return;
+    item.qty = Math.max(1, qty);
+    saveCart(cart);
+  }
+
+  function removeFromCart(id){
+    const cart = getCart().filter(x=>x.id!==id);
+    saveCart(cart);
+  }
+
+  function clearCart(){
+    if(confirm('Clear cart?')){ write(STORAGE.CART, []); renderMiniCart(); updateCounts(); }
+  }
+
+  function renderMiniCart(){
+    const list = document.getElementById('mini-cart-list') || document.getElementById('mini-cart-list');
+    if(!list) return;
+    const cart = getCart();
+    list.innerHTML = '';
+    if(!cart.length){ list.innerHTML = '<div class="small">Your cart is empty.</div>'; return; }
+    cart.forEach(it=>{
+      const p = getProducts().find(x=>x.id===it.id);
+      const row = document.createElement('div');
+      row.className = 'cart-item';
+      row.innerHTML = `<div style="flex:1"><div style="font-weight:600">${escapeHtml(it.title)}</div><div class="small">₹${it.price} × ${it.qty}</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end">
+          <div class="row" style="gap:6px">
+            <button class="ghost" onclick="changeQty(${it.id},${Math.max(1,it.qty-1)})">-</button>
+            <div class="pill small">${it.qty}</div>
+            <button class="ghost" onclick="changeQty(${it.id},${it.qty+1})">+</button>
+          </div>
+          <button class="ghost" style="margin-top:8px" onclick="removeFromCart(${it.id})">Remove</button>
+        </div>`;
+      list.appendChild(row);
+    });
+    updateCounts();
+  }
+
+  function getWishlist(){ return read(STORAGE.WISHLIST, []); }
+  function toggleWishlist(id){
+    const wish = getWishlist();
+    const idx = wish.indexOf(id);
+    if(idx>=0){ wish.splice(idx,1); write(STORAGE.WISHLIST,wish); alert('Removed from wishlist'); }
+    else { wish.push(id); write(STORAGE.WISHLIST,wish); alert('Added to wishlist'); }
+    updateCounts();
+  }
+
+  /* ---------------------------
+     Checkout & Orders
+  ----------------------------*/
+  function renderCheckout(){
+    const auth = read(STORAGE.AUTH, null);
+    if(!auth){ if(confirm('You must be logged in to checkout. Login now?')) navigate('#login'); else navigate('#shop'); return; }
+    const tpl = document.getElementById('checkout-tpl');
+    document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+    const cart = getCart();
+    if(!cart.length){ alert('Cart empty — add items first'); navigate('#shop'); return; }
+    const ci = document.getElementById('checkout-items');
+    ci.innerHTML = '';
+    cart.forEach(i=>{
+      const p = getProducts().find(x=>x.id===i.id);
+      const div = document.createElement('div');
+      div.innerHTML = `<div style="display:flex;justify-content:space-between"><div>${escapeHtml(i.title)} <span class="small">x${i.qty}</span></div><div>₹${i.price*i.qty}</div></div>`;
+      ci.appendChild(div);
+    });
+
+    const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    document.getElementById('checkout-sub').textContent = '₹'+subtotal;
+    document.getElementById('checkout-total').textContent = '₹'+subtotal;
+    document.getElementById('checkout-disc').textContent = '₹0';
+
+    // addresses
+    const users = read(STORAGE.USERS, []);
+    const me = users.find(u=>u.email===auth.email);
+    const select = document.getElementById('address-select');
+    select.innerHTML = '';
+    (me.addresses || []).forEach((a,idx)=> select.appendChild(new Option(a.label + ' — ' + a.line, idx)));
+    if(!select.options.length) select.appendChild(new Option('No addresses — add one in profile', '-1'));
+
+    document.getElementById('add-address-btn').addEventListener('click', ()=>{ navigate('#profile'); });
+
+    document.getElementById('apply-coupon').addEventListener('click', ()=>{
+      const code = document.getElementById('coupon').value.trim();
+      if(code==='DEMO10'){ const disc = Math.round(subtotal*0.10); document.getElementById('checkout-disc').textContent = '₹'+disc; document.getElementById('checkout-total').textContent = '₹'+(subtotal-disc); alert('Coupon applied: ₹'+disc+' off'); }
+      else alert('Invalid coupon');
+    });
+
+    document.getElementById('place-order-btn').addEventListener('click', placeOrder);
+  }
+
+  function placeOrder(){
+    const auth = read(STORAGE.AUTH, null);
+    if(!auth){ alert('Login required'); navigate('#login'); return; }
+    const cart = getCart(); if(!cart.length){ alert('Cart empty'); navigate('#shop'); return; }
+
+    const users = read(STORAGE.USERS, []);
+    const me = users.find(u=>u.email===auth.email);
+    const addrIndex = Number(document.getElementById('address-select').value);
+    let shipping = {};
+    if(isNaN(addrIndex) || addrIndex<0){ alert('Add shipping address first'); navigate('#profile'); return; }
+    shipping = me.addresses[addrIndex];
+
+    const orders = read(STORAGE.ORDERS, []);
+    const id = 'ORD-'+Math.floor(Math.random()*900000 + 100000);
+    const now = new Date().toISOString();
+    const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    const order = {
+      id, items: cart, total, name:me.name, email:me.email, phone:shipping.phone || '', address: shipping.line, payMethod: document.getElementById('payment-method').value,
+      placedAt: now, status:'Processing', history: [{at: now, status:'Processing'}], tracking: id
+    };
+    orders.push(order);
+    write(STORAGE.ORDERS, orders);
+
+    // reduce stock
+    const products = getProducts();
+    cart.forEach(ci=>{
+      const p = products.find(x=>x.id===ci.id);
+      if(p){ p.stock = Math.max(0, (p.stock||0) - ci.qty); }
+    });
+    write(STORAGE.PRODUCTS, products);
+
+    // clear cart
+    write(STORAGE.CART, []);
+    updateCounts();
+    alert('Order placed! Tracking ID: ' + id);
+    navigate('#orders?view='+id);
+  }
+
+  function renderOrders(){
+    const tpl = document.getElementById('orders-tpl');
+    document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+    const auth = read(STORAGE.AUTH, null);
+    if(!auth){ alert('Login to view orders'); navigate('#login'); return; }
+
+    const orders = read(STORAGE.ORDERS, []).filter(o=>o.email===auth.email).reverse();
+    const list = document.getElementById('orders-list');
+    if(!orders.length) list.innerHTML = '<div class="small">No orders yet.</div>';
+    orders.forEach(o=>{
+      const div = document.createElement('div');
+      div.className = 'order-card';
+      div.innerHTML = `<div><div style="font-weight:700">${o.id}</div><div class="small">${o.items.length} items • ₹${o.total}</div><div class="small">${new Date(o.placedAt).toLocaleString()}</div></div>
+        <div style="text-align:right"><div class="badge">${o.tracking}</div><div style="margin-top:8px"><button class="btn" onclick="navigate('#orders?view=${o.id}')">View</button></div></div>`;
+      list.appendChild(div);
+    });
+
+    // if view param present
+    const params = parseHashQuery();
+    const view = params.get('view');
+    if(view) renderOrderDetail(view);
+  }
+
+  function renderOrderDetail(id){
+    const orders = read(STORAGE.ORDERS, []);
+    const o = orders.find(x=>x.id===id);
+    if(!o){ alert('Order not found'); navigate('#orders'); return; }
+    const tpl = document.getElementById('order-detail-tpl');
+    document.getElementById('app').innerHTML = '';
+    document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+    document.getElementById('od-id').textContent = o.id;
+    document.getElementById('od-date').textContent = new Date(o.placedAt).toLocaleString();
+    document.getElementById('od-tracking').textContent = o.tracking;
+    document.getElementById('od-status').textContent = o.status;
+    document.getElementById('od-shipping').textContent = o.name + ' • ' + o.phone + '\n' + o.address;
+    const items = document.getElementById('od-items'); items.innerHTML = '';
+    o.items.forEach(i=>{ const p = getProducts().find(x=>x.id===i.id); const d = document.createElement('div'); d.className='small'; d.textContent = `${i.title} x ${i.qty} — ₹${i.price*i.qty}`; items.appendChild(d); });
+
+    const hist = document.getElementById('od-history'); hist.innerHTML = '';
+    o.history.forEach(h=>{ const d=document.createElement('div'); d.className='small'; d.textContent = `${new Date(h.at).toLocaleString()} — ${h.status}`; hist.appendChild(d); });
+
+    document.getElementById('simulate-progress').addEventListener('click', ()=>simulateProgress(o.id));
+  }
+
+  function simulateProgress(orderId){
+    const orders = read(STORAGE.ORDERS, []);
+    const o = orders.find(x=>x.id===orderId);
+    if(!o) return;
+    const steps = ['Processing','Packed','Shipped','Out for Delivery','Delivered'];
+    const idx = steps.indexOf(o.status);
+    if(idx < steps.length - 1){
+      const next = steps[idx+1];
+      const now = new Date().toISOString();
+      o.status = next; o.history.push({at: now, status: next});
+      write(STORAGE.ORDERS, orders);
+      alert('Order progressed to: '+next);
+      navigate('#orders?view='+orderId);
+    } else {
+      alert('Order already delivered');
+    }
+  }
+
+  /* ---------------------------
+     User auth & profile
+  ----------------------------*/
+  function renderProfile(){
+    const auth = read(STORAGE.AUTH, null);
+    if(!auth){ alert('Login to view profile'); navigate('#login'); return; }
+    const tpl = document.getElementById('profile-tpl');
+    document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+    const users = read(STORAGE.USERS, []);
+    const me = users.find(u=>u.email===auth.email);
+    document.getElementById('profile-name').value = me.name;
+    document.getElementById('profile-email').value = me.email;
+    document.getElementById('save-profile-btn').addEventListener('click', ()=>{
+      me.name = document.getElementById('profile-name').value.trim();
+      me.email = document.getElementById('profile-email').value.trim();
+      write(STORAGE.USERS, users);
+      write(STORAGE.AUTH, {id:me.id,name:me.name,email:me.email});
+      updateHeaderUser();
+      alert('Profile saved');
+    });
+
+    renderAddresses(me);
+    // orders
+    const orders = read(STORAGE.ORDERS, []).filter(o=>o.email===me.email).reverse();
+    const po = document.getElementById('profile-orders'); po.innerHTML = '';
+    if(!orders.length) po.innerHTML = '<div class="small">No orders yet</div>';
+    orders.forEach(o=>{ const d=document.createElement('div'); d.className='small'; d.innerHTML = `<strong>${o.id}</strong> • ₹${o.total}`; po.appendChild(d); });
+  }
+
+  function renderAddresses(user){
+    const wrap = document.getElementById('addresses-list');
+    wrap.innerHTML = '';
+    (user.addresses || []).forEach((a,idx)=>{
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.style.marginBottom = '8px';
+      div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(a.label)}</strong><div class="small">${escapeHtml(a.line)}</div></div><div><button class="ghost" onclick="editAddress(${user.id},${idx})">Edit</button><button class="ghost" onclick="deleteAddress(${user.id},${idx})">Delete</button></div></div>`;
+      wrap.appendChild(div);
+    });
+    document.getElementById('add-new-address').addEventListener('click', ()=>openAddressModal(user));
+  }
+
+  function openAddressModal(user){
+    const label = prompt('Address label (Home / Office)');
+    if(!label) return;
+    const line = prompt('Full address (Street, City, State, Pin)');
+    if(!line) return;
+    const phone = prompt('Phone number');
+    const users = read(STORAGE.USERS, []);
+    const me = users.find(u=>u.id===user.id);
+    me.addresses = me.addresses || [];
+    me.addresses.push({label,line,phone});
+    write(STORAGE.USERS, users);
+    alert('Address added');
+    navigate('#profile');
+  }
+
+  function editAddress(userId, idx){
+    const users = read(STORAGE.USERS, []);
+    const me = users.find(u=>u.id===userId);
+    if(!me) return;
+    const a = me.addresses[idx];
+    const nl = prompt('Edit address', a.line);
+    if(nl!==null){ a.line = nl; write(STORAGE.USERS, users); navigate('#profile'); }
+  }
+  function deleteAddress(userId, idx){
+    if(!confirm('Delete address?')) return;
+    const users = read(STORAGE.USERS, []);
+    const me = users.find(u=>u.id===userId);
+    me.addresses.splice(idx,1);
+    write(STORAGE.USERS, users);
+    navigate('#profile');
+  }
+
+  /* ---------------------------
+     Wishlist
+  ----------------------------*/
+  function renderWishlist(){
+    const tpl = document.getElementById('wishlist-tpl');
+    document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+    const wish = getWishlist();
+    const grid = document.getElementById('wishlist-grid');
+    grid.innerHTML = '';
+    if(!wish.length) grid.innerHTML = '<div class="small">Wishlist empty</div>';
+    wish.forEach(id=>{
+      const p = getProducts().find(x=>x.id===id);
+      if(p) grid.appendChild(productCard(p));
+    });
+  }
+
+  /* ---------------------------
+     Admin panel (simple)
+  ----------------------------*/
+  function renderAdmin(){
+    const auth = read(STORAGE.AUTH, null);
+    if(!auth || !auth.isAdmin){ if(confirm('Admin sign in required. Login as admin?')) navigate('#login'); else navigate('#shop'); return; }
+    const tpl = document.getElementById('admin-tpl');
+    document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+
+    const products = getProducts();
+    const adminProducts = document.getElementById('admin-products');
+    adminProducts.innerHTML = '';
+    products.forEach(p=>{
+      const d = document.createElement('div');
+      d.className = 'card';
+      d.style.marginBottom = '8px';
+      d.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(p.title)}</strong><div class="small">₹${p.price} • ${escapeHtml(p.cat)} • Stock: ${p.stock}</div></div><div><button class="ghost" onclick='adminEditProduct(${p.id})'>Edit</button><button class="ghost" onclick='adminDeleteProduct(${p.id})'>Delete</button></div></div>`;
+      adminProducts.appendChild(d);
+    });
+
+    const orders = read(STORAGE.ORDERS, []).slice().reverse();
+    const adminOrders = document.getElementById('admin-orders');
+    adminOrders.innerHTML = '';
+    if(!orders.length) adminOrders.innerHTML = '<div class="small">No orders</div>';
+    orders.forEach(o=>{
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.style.marginBottom = '8px';
+      div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${o.id}</strong><div class="small">${o.items.length} items • ₹${o.total}</div></div><div><div class="small">${o.status}</div><div style="margin-top:6px"><button class="ghost" onclick="adminProgressOrder('${o.id}')">Advance</button></div></div></div>`;
+      adminOrders.appendChild(div);
+    });
+
+    document.getElementById('admin-add-product').addEventListener('click', ()=>adminEditProduct());
+    document.getElementById('admin-reset-orders').addEventListener('click', ()=>{ if(confirm('Reset all orders?')){ write(STORAGE.ORDERS, []); alert('Orders reset'); render(); }});
+  }
+
+  window.adminEditProduct = function(id){
+    // id undefined => add new
+    const products = getProducts();
+    let p = id ? products.find(x=>x.id===id) : {id:read(STORAGE.SETTINGS).nextProductId,title:'New product',price:0,desc:'',cat:'General',brand:'',sku:'',img:'https://images.unsplash.com/photo-1580894894514-1c3a3f5f6b61?q=80&w=800&auto=format&fit=crop',stock:0,rating:0,ratingsCount:0,specs:'',createdAt:Date.now()};
+    const title = prompt('Title', p.title); if(title===null) return; p.title = title;
+    const price = Number(prompt('Price', p.price)); if(isNaN(price)) return; p.price = price;
+    const desc = prompt('Short description', p.desc); if(desc===null) return; p.desc = desc;
+    const cat = prompt('Category', p.cat) || 'General'; p.cat = cat;
+    const brand = prompt('Brand', p.brand) || ''; p.brand = brand;
+    const sku = prompt('SKU', p.sku || ('SKU'+Math.floor(Math.random()*9999))); p.sku = sku;
+    const img = prompt('Image URL', p.img) || p.img; p.img = img;
+    const stock = Number(prompt('Stock', p.stock)); p.stock = isNaN(stock)?0:stock;
+
+    if(id){
+      // update
+      const idx = products.findIndex(x=>x.id===id); products[idx] = p;
+    } else {
+      // add
+      const s = read(STORAGE.SETTINGS);
+      p.id = s.nextProductId;
+      s.nextProductId = s.nextProductId + 1;
+      write(STORAGE.SETTINGS, s);
+      products.push(p);
+    }
+    write(STORAGE.PRODUCTS, products);
+    alert('Product saved');
+    render();
+  };
+
+  window.adminDeleteProduct = function(id){
+    if(!confirm('Delete this product?')) return;
+    const products = getProducts().filter(x=>x.id!==id);
+    write(STORAGE.PRODUCTS, products);
+    alert('Deleted');
+    render();
+  };
+
+  window.adminProgressOrder = function(id){
+    const orders = read(STORAGE.ORDERS, []);
+    const o = orders.find(x=>x.id===id); if(!o) return;
+    const steps = ['Processing','Packed','Shipped','Out for Delivery','Delivered'];
+    const idx = steps.indexOf(o.status);
+    if(idx < steps.length - 1){ const next = steps[idx+1]; o.status = next; o.history.push({at:new Date().toISOString(), status: next}); write(STORAGE.ORDERS, orders); alert('Order updated to '+next); render(); }
+    else alert('Already delivered');
+  };
+
+  /* ---------------------------
+     Login / Register
+  ----------------------------*/
+  function renderLogin(){
+    const tpl = document.getElementById('login-tpl'); document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+    document.getElementById('login-btn').addEventListener('click', ()=>{ const e=document.getElementById('login-email').value.trim(); const p=document.getElementById('login-pass').value; loginUser(e,p); });
+    document.getElementById('reg-btn').addEventListener('click', ()=>{ const n=document.getElementById('reg-name').value.trim(); const e=document.getElementById('reg-email').value.trim(); const p=document.getElementById('reg-pass').value; registerUser(n,e,p); });
+  }
+
+  function loginUser(email, pass){
+    const users = read(STORAGE.USERS, []);
+    const u = users.find(x=>x.email===email && x.pass===pass);
+    if(!u){ alert('Invalid credentials (demo)'); return; }
+    const auth = {id:u.id, name:u.name, email:u.email, isAdmin: !!u.isAdmin};
+    write(STORAGE.AUTH, auth);
+    updateHeaderUser();
+    alert('Logged in as ' + u.name);
+    navigate('#shop');
+  }
+
+  function registerUser(name, email, pass){
+    if(!name||!email||!pass){ alert('All fields required'); return; }
+    const users = read(STORAGE.USERS, []);
+    if(users.find(x=>x.email===email)){ alert('Email exists, login instead'); return; }
+    const id = users.length? Math.max(...users.map(u=>u.id))+1 : 2;
+    const u = {id,name,email,pass,isAdmin:false,addresses:[],createdAt:Date.now()};
+    users.push(u); write(STORAGE.USERS, users);
+    write(STORAGE.AUTH, {id:u.id,name:u.name,email:u.email});
+    alert('Registered & logged in');
+    navigate('#shop');
+  }
+
+  /* ---------------------------
+     Utilities: export/import/reset
+  ----------------------------*/
+  function exportData(){
+    const data = {
+      products: read(STORAGE.PRODUCTS, []),
+      users: read(STORAGE.USERS, []),
+      orders: read(STORAGE.ORDERS, []),
+      settings: read(STORAGE.SETTINGS, {})
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'flipcartish-data.json'; a.click(); URL.revokeObjectURL(url);
+  }
+
+  function importDataPrompt(){
+    const txt = prompt('Paste exported JSON here (overwrites products, users, orders). Cancel to skip.');
+    if(!txt) return;
+    try{
+      const obj = JSON.parse(txt);
+      if(obj.products) write(STORAGE.PRODUCTS, obj.products);
+      if(obj.users) write(STORAGE.USERS, obj.users);
+      if(obj.orders) write(STORAGE.ORDERS, obj.orders);
+      if(obj.settings) write(STORAGE.SETTINGS, obj.settings);
+      alert('Imported data (client-side).');
+      render();
+    }catch(e){ alert('Invalid JSON'); }
+  }
+
+  function resetDemo(){
+    if(!confirm('Reset demo data to original seed? This will overwrite products, users and orders.')) return;
+    write(STORAGE.PRODUCTS, SEED_PRODUCTS);
+    write(STORAGE.USERS, SEED_USERS);
+    write(STORAGE.CART, []);
+    write(STORAGE.WISHLIST, []);
+    write(STORAGE.ORDERS, []);
+    write(STORAGE.SETTINGS, {nextProductId: SEED_PRODUCTS.length+1});
+    alert('Demo reset');
+    render();
+  }
+
+  /* ---------------------------
+     Helpers
+  ----------------------------*/
+  function escapeHtml(s){ return String(s||'').replace(/[&<>\"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]}); }
+
+  function updateCartFromStorage(){
+    renderMiniCart();
+    updateCounts();
+  }
+
+  // init mini cart on load
+  (function(){
+    // show cart UI element changes
+    window.addEventListener('load', ()=>{ renderMiniCart(); updateCounts(); });
+    // navigate on admin/login shortcut
+    if(location.hash==='') location.hash='#home';
+  })();
+
+  // Expose some functions for inline onclick in templates
+  window.navigate = navigate;
+  window.addToCart = addToCart;
+  window.changeQty = changeQty;
+  window.removeFromCart = removeFromCart;
+  window.clearCart = clearCart;
+  window.toggleWishlist = toggleWishlist;
+  window.renderMiniCart = renderMiniCart;
+  window.updateCounts = updateCounts;
+  window.exportData = exportData;
+  window.importDataPrompt = importDataPrompt;
+  window.resetDemo = resetDemo;
+
+  </script>
+</body>
+</html>
